@@ -1,90 +1,61 @@
 package com.example.proyecto.services;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.example.proyecto.dtos.UsuarioDTO;
+import com.example.proyecto.models.AreaModel;
 import com.example.proyecto.models.UsuarioModel;
+import com.example.proyecto.repositories.AreaRepository;
 import com.example.proyecto.repositories.UsuarioRepository;
 
 @Service
 public class UsuarioService {
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepo;
+    private final AreaRepository areaRepo;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public UsuarioService(UsuarioRepository usuarioRepo, AreaRepository areaRepo) {
+        this.usuarioRepo = usuarioRepo;
+        this.areaRepo = areaRepo;
     }
 
-    public List<UsuarioModel> getUsuariosByAreaId(Long areaId) {
-        return usuarioRepository.findByAreaId(areaId);
+    public UsuarioDTO crearUsuarioConArea(Long idArea, UsuarioModel usuario) {
+        AreaModel area = areaRepo.findById(idArea)
+                .orElseThrow(() -> new RuntimeException("Área no encontrada"));
+        usuario.setArea(area);
+        UsuarioModel saved = usuarioRepo.save(usuario);
+        return UsuarioDTO.fromEntity(saved);
     }
 
-    public List<UsuarioModel> getAllUsuarios() {
-        return usuarioRepository.findAll();
+    public UsuarioDTO asignarArea(Long idUsuario, Long idArea) {
+        UsuarioModel usuario = usuarioRepo.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        AreaModel area = areaRepo.findById(idArea)
+                .orElseThrow(() -> new RuntimeException("Área no encontrada"));
+        usuario.setArea(area);
+        UsuarioModel updated = usuarioRepo.save(usuario);
+        return UsuarioDTO.fromEntity(updated);
     }
 
-    public Optional<UsuarioModel> getUsuarioById(Long id) {
-        return usuarioRepository.findById(id);
+    public List<UsuarioDTO> listarUsuarios() {
+        return usuarioRepo.findAll()
+                .stream()
+                .map(UsuarioDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    public UsuarioModel saveUsuario(UsuarioModel usuario) {
-        validarUsuario(usuario);
-        return usuarioRepository.save(usuario);
+    public UsuarioDTO obtenerUsuario(Long idUsuario) {
+        return usuarioRepo.findById(idUsuario)
+                .map(UsuarioDTO::fromEntity)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
-    public UsuarioModel updateUsuario(Long id, UsuarioModel usuarioDetails) {
-        validarUsuario(usuarioDetails);
-        Optional<UsuarioModel> optionalUsuario = usuarioRepository.findById(id);
-        if (optionalUsuario.isPresent()) {
-            UsuarioModel usuario = optionalUsuario.get();
-            usuario.setNombre(usuarioDetails.getNombre());
-            usuario.setEmail(usuarioDetails.getEmail());
-            usuario.setRuc_ci(usuarioDetails.getRuc_ci());
-            usuario.setRol(usuarioDetails.getRol());
-            usuario.setPassword(usuarioDetails.getPassword());
-            usuario.setArea(usuarioDetails.getArea());
-            return usuarioRepository.save(usuario);
-        } else {
-            return null;
-        }
-    }
-
-    public void deleteUsuario(Long id) {
-        usuarioRepository.deleteById(id);
-    }
-
-    private void validarUsuario(UsuarioModel usuario) {
-        if (!esTextoValido(usuario.getNombre())) {
-            throw new IllegalArgumentException("El nombre solo debe contener letras y espacios.");
-        }
-        if (!esTextoValido(usuario.getRol())) {
-            throw new IllegalArgumentException("El rol solo debe contener letras y espacios.");
-        }
-        if (!esTextoValido(usuario.getRuc_ci())) {
-            throw new IllegalArgumentException("El RUC/CI solo debe contener letras y espacios.");
-        }
-        if (usuario.getEmail() == null || usuario.getEmail().isEmpty() || !usuario.getEmail().contains("@")) {
-            throw new IllegalArgumentException("El email debe ser válido y contener '@'.");
-        }
-        if (usuario.getPassword() == null || usuario.getPassword().length() < 6) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres.");
-        }
-        if (usuario.getArea() == null) {
-            throw new IllegalArgumentException("El área no puede ser nula.");
-        }
-
-    }
-
-    private boolean esTextoValido(String texto) {
-        if (texto == null || texto.isEmpty()) {
-            return false;
-        }
-        for (char c : texto.toCharArray()) {
-            if (!Character.isLetter(c) && !Character.isSpaceChar(c)) {
-                return false;
-            }
-        }
-        return true;
+    public List<UsuarioDTO> listarUsuariosPorArea(Long idArea) {
+        return usuarioRepo.findByAreaId(idArea)
+                .stream()
+                .map(UsuarioDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 }

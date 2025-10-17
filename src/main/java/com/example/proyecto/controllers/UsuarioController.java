@@ -2,7 +2,6 @@ package com.example.proyecto.controllers;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,45 +10,46 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.proyecto.dtos.UsuarioDTO;
 import com.example.proyecto.models.UsuarioModel;
-
-/* import com.example.proyecto.services.AreaService; */
 import com.example.proyecto.services.UsuarioService;
 
 @RestController
 @RequestMapping("/usuarios")
 public class UsuarioController {
-    private final UsuarioService usuarioService;
-    // private final AreaService areaService;
+    private final UsuarioService service;
 
-    public UsuarioController(UsuarioService usuarioService/* , AreaService areaService */) {
-        this.usuarioService = usuarioService;
-        // this.areaService = areaService;
+    public UsuarioController(UsuarioService service) {
+        this.service = service;
     }
+
+
+    @PostMapping("/area/{idArea}")
+    public UsuarioDTO crearUsuarioConArea(@PathVariable Long idArea, @RequestBody UsuarioModel usuario) {
+        return service.crearUsuarioConArea(idArea, usuario);
+    }
+
+
+    @PutMapping("/{idUsuario}/area/{idArea}")
+    public UsuarioDTO asignarArea(@PathVariable Long idUsuario, @PathVariable Long idArea) {
+        return service.asignarArea(idUsuario, idArea);
+    }
+
 
     @GetMapping
-    public List<UsuarioModel> getAllUsuarios() {
-        return usuarioService.getAllUsuarios();
+    public List<UsuarioDTO> listarUsuarios() {
+        return service.listarUsuarios();
     }
 
-    @GetMapping("/{id}")
-    public UsuarioModel getUsuarioById(Long id) {
-        return usuarioService.getUsuarioById(id).orElse(null);
+
+    @GetMapping("/{idUsuario}")
+    public UsuarioDTO obtenerUsuario(@PathVariable Long idUsuario) {
+        return service.obtenerUsuario(idUsuario);
     }
 
-    @PostMapping
-    public UsuarioModel createUsuario(@RequestBody UsuarioModel usuario) {
-        return usuarioService.saveUsuario(usuario);
-    }
 
-    @PutMapping("/{id}")
-    public UsuarioModel updateUsuario(@PathVariable Long id, @RequestBody UsuarioModel usuario) {
-        return usuarioService.updateUsuario(id, usuario);
+    @GetMapping("/area/{idArea}")
+    public List<UsuarioDTO> listarPorArea(@PathVariable Long idArea) {
+        return service.listarUsuariosPorArea(idArea);
     }
-
-    @DeleteMapping("/{id}")
-    public void deleteUsuario(@PathVariable Long id) {
-        usuarioService.deleteUsuario(id);
-    }
-
 }

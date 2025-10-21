@@ -36,12 +36,8 @@ public class AprobacionController {
         return AprobacionDTO.fromEntity(service.cambiarEstadoReserva(reservaId, coordId, "RECHAZADA"));
     }
 
-
-
-
     @GetMapping("/{id}")
     public AprobacionesModel obtener(@PathVariable Long id) {
         return service.getById(id);
     }
 }
-

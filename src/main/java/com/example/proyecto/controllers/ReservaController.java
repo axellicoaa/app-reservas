@@ -5,9 +5,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,11 +24,11 @@ import com.example.proyecto.services.ReservaService;
 @RestController
 @RequestMapping("/reservas")
 public class ReservaController {
-    
+
     private final ReservaService service;
     private final ReservaRepository reservaRepo;
 
-    public ReservaController(ReservaService service, ReservaRepository reservaRepo) { 
+    public ReservaController(ReservaService service, ReservaRepository reservaRepo) {
         this.service = service;
         this.reservaRepo = reservaRepo;
     }
@@ -42,7 +44,7 @@ public class ReservaController {
     public List<ReservaDTO> listar() {
         return service.getAll();
     }
-    
+
     // ✅ GET reservas por sala en un rango de fechas
     @GetMapping("/sala/{id}")
     public List<ReservaDTO> porSala(
@@ -57,8 +59,7 @@ public class ReservaController {
     public List<ReservaDTO> listarPorUsuario(
             @PathVariable Long idUsuario,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
         if (desde != null && hasta != null) {
             return reservaRepo.findByUsuarioIdAndFechaBetween(idUsuario, desde, hasta)
                     .stream().map(ReservaDTO::fromEntity).toList();
@@ -77,6 +78,7 @@ public class ReservaController {
 
         return new ReservaResumenDTO(pendientes, aprobadas, rechazadas);
     }
+
     // ReservaController.java
     @GetMapping("/pendientes")
     public List<ReservaDTO> listarPendientes() {

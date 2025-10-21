@@ -21,8 +21,9 @@ import com.example.proyecto.services.SalaService;
 public class SalaController {
     private final SalaService service;
 
-    public SalaController(SalaService service) { this.service = service; }
-
+    public SalaController(SalaService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public List<SalaDTO> listar() {
@@ -30,19 +31,17 @@ public class SalaController {
                 .map(SalaDTO::fromEntity)
                 .toList();
     }
+
     @GetMapping("/{id}")
     public SalaDTO obtenerPorId(@PathVariable Long id) {
         SalaModel sala = service.getById(id);
         return SalaDTO.fromEntity(sala);
     }
 
-
-
     @PostMapping
     public SalaDTO crear(@RequestBody SalaModel s) {
         return SalaDTO.fromEntity(service.save(s));
     }
-
 
     @PostMapping("/{idSala}/equipamiento/{idEquipo}")
     public SalaDTO agregarEquipamiento(
@@ -51,7 +50,6 @@ public class SalaController {
         return SalaDTO.fromEntity(service.agregarEquipamiento(idSala, idEquipo));
     }
 
-
     @PostMapping("/{idSala}/equipamientos")
     public SalaDTO agregarVariosEquipamientos(
             @PathVariable Long idSala,
@@ -59,12 +57,13 @@ public class SalaController {
         return SalaDTO.fromEntity(service.agregarVariosEquipamientos(idSala, idsEquipos));
     }
 
-        @GetMapping("/disponibilidad")
+    @GetMapping("/disponibilidad")
     public List<SalaDTO> listarConDisponibilidad() {
-        return service.getSalasConDisponibilidad();
+        return service.getSalasConDisponibilidad().stream()
+                .filter(SalaDTO::disponible) // 👈 solo las disponibles
+                .toList();
     }
 
- 
     @GetMapping("/dashboard")
     public Map<String, Long> contarDisponibilidad() {
         return service.contarDisponibilidad();
@@ -76,6 +75,5 @@ public class SalaController {
             @RequestBody SalaUpdateRequest request) {
         return service.actualizar(idSala, request);
     }
-
 
 }

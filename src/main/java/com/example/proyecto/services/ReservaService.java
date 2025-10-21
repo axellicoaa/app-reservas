@@ -1,7 +1,12 @@
-// ReservaService.java
 package com.example.proyecto.services;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.example.proyecto.dtos.ReservaDTO;
+import com.example.proyecto.dtos.ReservaRequest;
 import com.example.proyecto.models.EquipamientoModel;
 import com.example.proyecto.models.ReservaModel;
 import com.example.proyecto.models.SalaModel;
@@ -9,74 +14,97 @@ import com.example.proyecto.models.UsuarioModel;
 import com.example.proyecto.repositories.ReservaRepository;
 import com.example.proyecto.repositories.SalaRepository;
 import com.example.proyecto.repositories.UsuarioRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.Date;
-import java.util.List;
 
 @Service
 public class ReservaService {
-    private final ReservaRepository repo;
+    private final ReservaRepository reservaRepo;
     private final SalaRepository salaRepo;
-    private final UsuarioRepository usuarioRepo; 
+    private final UsuarioRepository usuarioRepo;
 
-    public ReservaService(ReservaRepository repo, SalaRepository salaRepo, UsuarioRepository usuarioRepo) {
-        this.repo = repo;
+    public ReservaService(
+            ReservaRepository reservaRepo,
+            SalaRepository salaRepo,
+            UsuarioRepository usuarioRepo
+    ) {
+        this.reservaRepo = reservaRepo;
         this.salaRepo = salaRepo;
         this.usuarioRepo = usuarioRepo;
     }
 
-    public ReservaModel crearReserva(ReservaModel r, List<Long> equipamientosRequeridos) {
-
-        SalaModel sala = salaRepo.findById(r.getSala().getId())
+    // ✅ Crear reserva desde ReservaRequest
+    public ReservaDTO crearReserva(ReservaRequest request) {
+        // Buscar sala
+        SalaModel sala = salaRepo.findById(request.getSalaId())
                 .orElseThrow(() -> new RuntimeException("Sala no encontrada"));
 
-
-        UsuarioModel usuario = usuarioRepo.findById(r.getUsuario().getId())
+        // Buscar usuario
+        UsuarioModel usuario = usuarioRepo.findById(request.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-
-        int hInicio = r.getHoraInicio().toLocalTime().getHour();
-        int hFin = r.getHoraFin().toLocalTime().getHour();
+        // Validar horario laboral
+        int hInicio = request.getHoraInicio().getHour();
+        int hFin = request.getHoraFin().getHour();
         if (hInicio < 8 || hFin > 18) {
             throw new RuntimeException("Fuera del horario laboral (8:00 - 18:00)");
         }
 
-
-        boolean conflicto = repo.existsBySalaIdAndFechaAndHoraInicioLessThanEqualAndHoraFinGreaterThanEqual(
-                sala.getId(), r.getFecha(), r.getHoraInicio(), r.getHoraFin());
+        // Validar conflictos de horario
+        boolean conflicto = reservaRepo
+                .existsBySalaIdAndFechaAndHoraInicioLessThanEqualAndHoraFinGreaterThanEqualAndEstado(
+                        sala.getId(),
+                        request.getFecha(),
+                        request.getHoraInicio(),
+                        request.getHoraFin(),
+                        "APROBADA"
+                );
         if (conflicto) {
             throw new RuntimeException("Conflicto de horario con otra reserva");
         }
 
+        // Validar equipamientos
+        List<Long> idsSala = sala.getEquipamientos() == null ? List.of()
+                : sala.getEquipamientos().stream().map(EquipamientoModel::getId).toList();
 
-        List<Long> idsSala = (sala.getEquipamientos() == null ? List.<EquipamientoModel>of() : sala.getEquipamientos())
-                .stream().map(EquipamientoModel::getId).toList();
-
-        List<Long> faltan = (equipamientosRequeridos == null ? List.<Long>of() : equipamientosRequeridos)
+        List<Long> faltan = (request.getEquipamientosRequeridos() == null ? List.<Long>of()
+                : request.getEquipamientosRequeridos())
                 .stream().filter(id -> !idsSala.contains(id)).toList();
 
         if (!faltan.isEmpty()) {
             throw new RuntimeException("La sala no tiene los siguientes equipos: " + faltan);
         }
 
-        r.setSala(sala);
-        r.setUsuario(usuario);
-        r.setEstado("PENDIENTE");
+        // Construir y guardar Reserva
+        ReservaModel reserva = new ReservaModel();
+        reserva.setSala(sala);
+        reserva.setUsuario(usuario);
+        reserva.setFecha(request.getFecha());
+        reserva.setHoraInicio(request.getHoraInicio());
+        reserva.setHoraFin(request.getHoraFin());
+        reserva.setEstado("PENDIENTE");
 
-        return repo.save(r);
+        ReservaModel saved = reservaRepo.save(reserva);
+
+        return ReservaDTO.fromEntity(saved);
     }
 
-
+    // ✅ Otros métodos
     public List<ReservaDTO> getAll() {
-        return repo.findAll().stream().map(ReservaDTO::fromEntity).toList();
+        return reservaRepo.findAll().stream().map(ReservaDTO::fromEntity).toList();
     }
 
-    public List<ReservaDTO> getPorSala(Long salaId, Date desde, Date hasta) {
-        return repo.findBySalaIdAndFechaBetween(salaId, desde, hasta).stream().map(ReservaDTO::fromEntity).toList();
+    public List<ReservaDTO> getPorSala(Long salaId, LocalDate desde, LocalDate hasta) {
+        return reservaRepo.findBySalaIdAndFechaBetween(salaId, desde, hasta)
+                .stream().map(ReservaDTO::fromEntity).toList();
     }
 
-    public List<ReservaDTO> getPorUsuario(Long usuarioId, Date desde, Date hasta) {
-        return repo.findByUsuarioIdAndFechaBetween(usuarioId, desde, hasta).stream().map(ReservaDTO::fromEntity).toList();
+    public List<ReservaDTO> getPorUsuario(Long usuarioId, LocalDate desde, LocalDate hasta) {
+        return reservaRepo.findByUsuarioIdAndFechaBetween(usuarioId, desde, hasta)
+                .stream().map(ReservaDTO::fromEntity).toList();
     }
+    // ReservaService.java
+    public List<ReservaDTO> getPendientes() {
+        return reservaRepo.findByEstado("PENDIENTE")
+                .stream().map(ReservaDTO::fromEntity).toList();
+}
+
 }

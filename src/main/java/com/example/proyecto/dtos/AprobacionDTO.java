@@ -1,6 +1,7 @@
 package com.example.proyecto.dtos;
 
 import com.example.proyecto.models.AprobacionesModel;
+import com.example.proyecto.models.ReservaModel;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,8 +11,17 @@ import lombok.Setter;
 public class AprobacionDTO {
     private Long id;
     private String estado;
+
+    // Info de la reserva
     private Long reservaId;
     private String reservaEstado;
+    private String salaNombre;
+    private String usuarioSolicitante;
+    private String fecha;
+    private String horaInicio;
+    private String horaFin;
+
+    // Info del coordinador
     private Long coordinadorId;
     private String coordinadorNombre;
 
@@ -20,9 +30,15 @@ public class AprobacionDTO {
         dto.setId(aprobacion.getId());
         dto.setEstado(aprobacion.getEstado());
 
-        if (aprobacion.getReserva() != null) {
-            dto.setReservaId(aprobacion.getReserva().getId());
-            dto.setReservaEstado(aprobacion.getReserva().getEstado());
+        ReservaModel reserva = aprobacion.getReserva();
+        if (reserva != null) {
+            dto.setReservaId(reserva.getId());
+            dto.setReservaEstado(reserva.getEstado());
+            dto.setSalaNombre(reserva.getSala() != null ? reserva.getSala().getNombreSala() : null);
+            dto.setUsuarioSolicitante(reserva.getUsuario() != null ? reserva.getUsuario().getNombre() : null);
+            dto.setFecha(reserva.getFecha() != null ? reserva.getFecha().toString() : null);
+            dto.setHoraInicio(reserva.getHoraInicio() != null ? reserva.getHoraInicio().toString() : null);
+            dto.setHoraFin(reserva.getHoraFin() != null ? reserva.getHoraFin().toString() : null);
         }
 
         if (aprobacion.getUsuario() != null) {
@@ -32,6 +48,4 @@ public class AprobacionDTO {
 
         return dto;
     }
-
-
 }

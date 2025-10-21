@@ -24,10 +24,19 @@ public class UsuarioService {
     public UsuarioDTO crearUsuarioConArea(Long idArea, UsuarioModel usuario) {
         AreaModel area = areaRepo.findById(idArea)
                 .orElseThrow(() -> new RuntimeException("Área no encontrada"));
+
         usuario.setArea(area);
+
+        // 🔑 Asegurar que el password que llega del frontend sí se guarda
+        if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+            throw new RuntimeException("La contraseña es obligatoria");
+        }
+
         UsuarioModel saved = usuarioRepo.save(usuario);
         return UsuarioDTO.fromEntity(saved);
     }
+
+
 
     public UsuarioDTO asignarArea(Long idUsuario, Long idArea) {
         UsuarioModel usuario = usuarioRepo.findById(idUsuario)

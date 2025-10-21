@@ -1,10 +1,22 @@
 package com.example.proyecto.models;
 
-import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import lombok.Getter;
 import lombok.Setter;
-import java.sql.Time;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -18,10 +30,10 @@ public class ReservaModel {
     private Long id;
 
     @Temporal(TemporalType.DATE)
-    private Date fecha;
+    private LocalDate fecha;
 
-    private Time horaInicio;
-    private Time horaFin;
+    private LocalTime horaInicio;
+    private LocalTime horaFin;
 
     private String estado;
 
